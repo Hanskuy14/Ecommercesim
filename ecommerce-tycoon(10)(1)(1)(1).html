@@ -316,7 +316,7 @@ input:focus,select:focus,textarea:focus{border-color:#6366f1!important;box-shado
 </div>
 
 <!-- MAIN APP -->
-<div id="app" style="display:none;min-height:100vh;flex-direction:column" class="flex">
+<div id="app" style="display:none;min-height:100vh;flex-direction:column;overflow-y:auto" class="flex">
 
 <!-- TOP NAVIGATION -->
 <nav id="topNav">
@@ -434,7 +434,7 @@ input:focus,select:focus,textarea:focus{border-color:#6366f1!important;box-shado
 </nav>
 
 <!-- MAIN CONTENT -->
-<main id="mainContent" style="flex:1;overflow-y:auto;background:#f0f2f8;margin-top:96px;min-height:100vh">
+<main id="mainContent" style="flex:1;background:#f0f2f8;margin-top:96px;min-height:100vh;overflow:visible">
 
 
 <!-- TAB: DASHBOARD -->
@@ -498,7 +498,7 @@ input:focus,select:focus,textarea:focus{border-color:#6366f1!important;box-shado
   </div>
   <!-- TRUST SCORE -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px">
-    <div class="card p-4 stat-card"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Trust Score</span><span style="font-size:22px">🛡️</span></div><div id="statTrustScore" style="font-size:18px;font-weight:800;color:#7c3aed">0</div><div id="statTrustLabel" style="font-size:11px;color:#94a3b8;margin-top:3px">Baru Mulai</div></div>
+    <div class="card p-4 stat-card"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Trust Score</span><span style="font-size:22px">🛡️</span></div><div id="statTrustScore" style="font-size:18px;font-weight:800;color:#7c3aed">50</div><div id="statTrustLabel" style="font-size:11px;color:#94a3b8;margin-top:3px">Cukup</div></div>
     <div class="card p-4 stat-card"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">VIP Pelanggan</span><span style="font-size:22px">👑</span></div><div id="statVIPCount" style="font-size:18px;font-weight:800;color:#f59e0b">0</div><div style="font-size:11px;color:#94a3b8;margin-top:3px">pelanggan setia</div></div>
     <div class="card p-4 stat-card"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Platform Aktif</span><span style="font-size:22px">🌐</span></div><div id="statPlatformCount" style="font-size:18px;font-weight:800;color:#0ea5e9">1</div><div style="font-size:11px;color:#94a3b8;margin-top:3px">marketplace</div></div>
     <div class="card p-4 stat-card"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Achievement</span><span style="font-size:22px">🏆</span></div><div id="statAchieveCount" style="font-size:18px;font-weight:800;color:#ef4444">0</div><div style="font-size:11px;color:#94a3b8;margin-top:3px">dari <span id="statAchieveTotal">0</span> total</div></div>
@@ -746,7 +746,7 @@ input:focus,select:focus,textarea:focus{border-color:#6366f1!important;box-shado
   </div>
   <div class="card p-5"><div class="section-header">🤝 Daftar Affiliator</div><div id="affiliateList"><div style="text-align:center;color:#94a3b8;font-size:13px;padding:32px 0"><div style="font-size:36px;margin-bottom:8px">🤝</div>Belum ada affiliator.</div></div></div>
 </div>
-<div id="addAffiliateModal" class="modal-overlay" style="display:none">
+<div id="addAffiliateModal" class="modal-overlay" style="display:none;z-index:400">
   <div class="modal-box p-6 mx-4" style="max-width:420px">
     <h3 style="font-size:16px;font-weight:700;color:#1e293b;margin-bottom:16px">🤝 Tambah Affiliator</h3>
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
@@ -1405,7 +1405,7 @@ input:focus,select:focus,textarea:focus{border-color:#6366f1!important;box-shado
     <div><h2 style="font-size:20px;font-weight:800;color:#1e293b">💸 Simulasi Arus Kas</h2>
     <p style="color:#64748b;font-size:13px">Pantau cash flow, burn rate & proyeksi keuangan</p></div>
   </div>
-  <div id="cashflowContent"></div>
+  <div id="cashflowTabContent"></div>
 </div>
 
 <!-- TAB: QUESTS -->
@@ -1593,6 +1593,14 @@ let G = {
   productShippingCost: {}, // {productId: totalShipping}
   productPlatformFee: {}, // {productId: totalPlatformFee}
   productUploadWeek: {},  // {productId: week uploaded}
+
+  // ============================================================
+  // NEWS SYSTEM
+  // ============================================================
+  activeNews: [],
+  newsHistory: [],
+  newsEffects: {},
+  _lastRandomEventId: null,
 
   // ============================================================
   // NOTIFICATION SYSTEM
@@ -1816,8 +1824,8 @@ const WAREHOUSE_LEVELS = [
   {level:3,name:'Gudang Besar',emoji:'🏭',desc:'Fulfillment center otomatis. Efisiensi +35%.',monthlyCost:12000000,logisticDiscount:0.35,stockBonus:0.50,unlockCash:150000000},
 ];
 
-// NEW RANDOM EVENTS (tambahan)
-const RANDOM_EVENTS_NEW = [
+// NEW RANDOM EVENTS (tambahan — merged into main RANDOM_EVENTS array)
+const RANDOM_EVENTS_LEGACY_EXTRA = [
   {
     id:'negative_viral',emoji:'📰',title:'Berita Hoax Produkmu!',
     desc:'Ada berita hoax yang menyerang reputasi produkmu. Ribuan pelanggan sudah melihatnya!',
@@ -2003,7 +2011,7 @@ function showTab(tab){
     if(btn) btn.classList.toggle('has-active', tabGroup[tab]===g);
   });
   // Scroll konten kembali ke atas saat pindah tab
-  const mc = document.getElementById('mainContent');
+  const mc = document.getElementById('app');
   if(mc) mc.scrollTop = 0;
   // Close notif panel when navigating
   closeNotifPanel();
@@ -2860,11 +2868,19 @@ function processInvestmentReturns(logs){
 let _pendingEventCallback = null;
 
 function triggerRandomEvent(callback){
-  // 30% chance per week
-  if(Math.random()>0.30){ if(callback) callback({}); return; }
-  // Combine old + new events
-  const allEvents=[...RANDOM_EVENTS,...(typeof RANDOM_EVENTS_NEW!=='undefined'?RANDOM_EVENTS_NEW:[])];
-  const event=allEvents[randInt(0,allEvents.length-1)];
+  // 40% chance per week
+  if(Math.random()>0.40){ if(callback) callback({}); return; }
+  // Combine all event pools
+  const allEvents=[
+    ...RANDOM_EVENTS,
+    ...(typeof RANDOM_EVENTS_LEGACY_EXTRA!=='undefined'?RANDOM_EVENTS_LEGACY_EXTRA:[]),
+    ...(typeof RANDOM_EVENTS_NEW!=='undefined'?RANDOM_EVENTS_NEW:[])
+  ];
+  // Avoid repeating last event
+  const lastId = G._lastRandomEventId;
+  const pool = allEvents.filter(e => e.id !== lastId);
+  const event=(pool.length>0?pool:allEvents)[randInt(0,(pool.length>0?pool:allEvents).length-1)];
+  G._lastRandomEventId = event.id;
   showEventPopup(event, callback);
 }
 
@@ -2884,14 +2900,18 @@ function showEventPopup(event, callback){
   document.getElementById('eventEmoji').textContent=event.emoji;
   document.getElementById('eventTitle').textContent=event.title;
   document.getElementById('eventDesc').textContent=event.desc;
-  document.getElementById('eventModalHeader').style.background=`linear-gradient(135deg,${event.color},${event.color}bb)`;
+  // Support both 'gradient' and 'color' properties
+  const bg = event.gradient || (event.color ? `linear-gradient(135deg,${event.color},${event.color}bb)` : 'linear-gradient(135deg,#6366f1,#4f46e5)');
+  const hoverColor = event.color || '#6366f1';
+  document.getElementById('eventModalHeader').style.background=bg;
   const choicesEl=document.getElementById('eventChoices');
-  choicesEl.innerHTML=event.choices.map((c,i)=>`
-    <button onclick="selectEventChoice(${i})" style="text-align:left;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .2s;width:100%" onmouseover="this.style.borderColor='${event.color}';this.style.background='#f0f3ff'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
+  choicesEl.innerHTML=event.choices.map((c,i)=>{
+    const descText = typeof c.effect === 'function' ? (c.desc||'') : (c.desc||'');
+    return `<button onclick="selectEventChoice(${i})" style="text-align:left;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .2s;width:100%" onmouseover="this.style.borderColor='${hoverColor}';this.style.background='#f0f3ff'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background='#f8fafc'">
       <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:3px">${c.label}</div>
-      <div style="font-size:11px;color:#64748b">${c.desc}</div>
-    </button>
-  `).join('');
+      ${descText?`<div style="font-size:11px;color:#64748b">${descText}</div>`:''}
+    </button>`;
+  }).join('');
   _pendingEventCallback = {event, callback};
   document.getElementById('eventModal').style.display='flex';
 }
@@ -2902,7 +2922,25 @@ function selectEventChoice(idx){
   const choice=event.choices[idx];
   const effect=choice.effect;
   const result={};
-  // Apply effects
+
+  // Handle FUNCTION-based effects (new style RANDOM_EVENTS_NEW)
+  if(typeof effect === 'function'){
+    try {
+      const fnResult = effect(G);
+      if(fnResult && fnResult.log){
+        // Show result log as toast
+        showToast(fnResult.log, fnResult.type||'info');
+      }
+    } catch(e){ console.error('Event effect error:', e); }
+    G.eventHistory.push({week:G.week, event:event.title, choice:choice.label});
+    document.getElementById('eventModal').style.display='none';
+    _pendingEventCallback=null;
+    updateUI();
+    if(callback) callback(result);
+    return;
+  }
+
+  // Handle OBJECT-based effects (classic RANDOM_EVENTS style)
   if(effect.cash){ G.cash=Math.max(0,G.cash+effect.cash); result.cashChange=effect.cash; }
   if(effect.followers){ G.followers=Math.max(0,G.followers+effect.followers); }
   if(effect.followerPenalty){ G.followers=Math.max(0,G.followers-effect.followerPenalty); }
@@ -3003,7 +3041,15 @@ function updateAdCards(){
 // ============================================================
 // AFFILIATE
 // ============================================================
-function openAddAffiliateModal(){ document.getElementById('affName').value=''; document.getElementById('affCommission').value=5; document.getElementById('affPreview').innerHTML=''; document.getElementById('addAffiliateModal').style.display='flex'; }
+function openAddAffiliateModal(){
+  document.getElementById('affName').value='';
+  document.getElementById('affCommission').value=5;
+  document.getElementById('affPreview').innerHTML='';
+  // Move modal to body to escape stacking context of mainContent
+  const modal = document.getElementById('addAffiliateModal');
+  if(modal.parentElement !== document.body) document.body.appendChild(modal);
+  modal.style.display='flex';
+}
 function closeAddAffiliateModal(){ document.getElementById('addAffiliateModal').style.display='none'; }
 document.addEventListener('input',e=>{
   if(['affName','affCommission'].includes(e.target.id)){
@@ -3509,14 +3555,10 @@ function processNextWeek(eventResult){
   G.totalPendingFunds = (G.pendingFunds||[]).reduce((s,f)=>s+f.amount,0);
 
   // Actual cash from this week = immediate portion + released funds
+  // NOTE: holdAmount stays in pendingFunds queue (not added to cash yet)
   G.cash += immediateRevenue + wkReleasedFunds;
   G.totalRevenue += wkRevenue;
-  if(G.week === 1){
-    // On first week no pending history, so just add all
-    G.cash += holdAmount;
-    G.pendingFunds = G.pendingFunds.filter(f=>f.releaseWeek > G.week);
-    G.totalPendingFunds = 0;
-  }
+  // Week 1 special: no pending history yet so the first week just works normally (no double add)
   if(holdAmount > 0 && G.week > 1){
     logs.push({t:'info',m:`⏳ Dana ditahan: ${fmtFull(holdAmount)} akan cair T+${holdWeeks} (Minggu ${G.week+holdWeeks})`});
   }
@@ -3622,18 +3664,26 @@ function processNextWeek(eventResult){
   // 14e. MAYBE GENERATE COMPLAINT
   if(typeof maybeGenerateComplaint === 'function' && wkUnits>0) maybeGenerateComplaint(wkRevenue);
   // 14f. TRUST SCORE adjustments
-  if(G.rating>=4.5) adjustTrustScore && adjustTrustScore(1,'high rating');
-  else if(G.rating<3.0) adjustTrustScore && adjustTrustScore(-2,'low rating');
-  if(wkUnits>50) adjustTrustScore && adjustTrustScore(1,'good sales');
+  if(G.rating>=4.5) adjustTrustScore(1,'high rating');
+  else if(G.rating<3.0) adjustTrustScore(-2,'low rating');
+  if(wkUnits>50) adjustTrustScore(1,'good sales');
+  if(wkUnits===0 && G.week>2) adjustTrustScore(-1,'no sales');
+  // Passive weekly trust drift toward 50 (slow natural recovery/decay)
+  if(G.trustScore > 50 && G.rating < 3.5) adjustTrustScore(-1,'low rating drift');
+  if(G.trustScore < 50 && G.rating >= 4.0) adjustTrustScore(1,'good rating recovery');
   // 14g. FLASH SALE tracking for achievement
   if(G.ads[2]) G._flashSaleWeeks=(G._flashSaleWeeks||0)+1;
   // 14h. TAX OMZET UPDATE
   G.taxOmzet = G.totalRevenue;
-  // 14i. NEW RANDOM EVENTS (occasional)
-  if(Math.random()<0.15 && typeof RANDOM_EVENTS_NEW !== 'undefined'){
-    const newEv=RANDOM_EVENTS_NEW[randInt(0,RANDOM_EVENTS_NEW.length-1)];
+  // 14i. NEW RANDOM EVENTS (occasional) — fired separately from triggerRandomEvent
+  // Only fire if triggerRandomEvent didn't already fire an event this week
+  if(Math.random()<0.12 && typeof RANDOM_EVENTS_NEW !== 'undefined'){
+    const lastId = G._lastRandomEventId;
+    const pool = RANDOM_EVENTS_NEW.filter(ev => ev.id !== lastId);
+    const newEv = (pool.length > 0 ? pool : RANDOM_EVENTS_NEW)[randInt(0,(pool.length>0?pool:RANDOM_EVENTS_NEW).length-1)];
     if(newEv && !G.eventHistory.includes(newEv.id+G.week)){
       G.eventHistory.push(newEv.id+G.week);
+      G._lastRandomEventId = newEv.id;
       setTimeout(()=>showEventModal(newEv),800);
     }
   }
@@ -3929,7 +3979,9 @@ function updateSeasonBanner(){
 // TRUST SCORE SYSTEM
 // ============================================================
 function updateTrustScore(){
-  let score = G.trustScore || 50;
+  // Ensure trustScore is never undefined/null
+  if(typeof G.trustScore === 'undefined' || G.trustScore === null) G.trustScore = 50;
+  let score = G.trustScore;
   const el = document.getElementById('statTrustScore');
   const lbl = document.getElementById('statTrustLabel');
   const loyEl = document.getElementById('loyTrust');
@@ -3938,10 +3990,15 @@ function updateTrustScore(){
   if(el){ el.textContent = score; el.style.color = color; }
   if(lbl){ lbl.textContent = label; }
   if(loyEl){ loyEl.textContent = score; }
+  // Update progress bar in loyalty tab if exists
+  const trustBar = document.getElementById('trustScoreBar');
+  if(trustBar) trustBar.style.width = score + '%';
 }
 function adjustTrustScore(delta, reason){
   G.trustScore = clamp((G.trustScore||50)+delta, 0, 100);
   if(reason) console.log('Trust:',delta,reason);
+  // Immediately refresh the UI display
+  if(typeof updateTrustScore === 'function') updateTrustScore();
 }
 function updateNewDashboardStats(){
   const vipEl = document.getElementById('statVIPCount');
@@ -4541,11 +4598,13 @@ function renderTaxTab(){
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px"><span>Progress Pembayaran</span><span style="font-weight:700">${progress}%</span></div>
           <div class="progress-bar" style="height:12px"><div class="progress-fill" style="width:${progress}%;background:linear-gradient(90deg,#10b981,#059669)"></div></div>
         </div>
+        ${unpaid>0?`
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button onclick="payTax(true)" class="btn btn-success">✅ Bayar Pajak ${fmtFull(unpaid)}</button>
           <button onclick="payTax(false)" class="btn btn-danger">🙈 Tunda / Hindari</button>
         </div>
         <p style="font-size:11px;color:#94a3b8;margin-top:8px">*Menghindari pajak berisiko denda 2x + rating turun!</p>
+        `:`<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:14px;font-size:13px;color:#065f46;display:flex;align-items:center;gap:8px">✅ <strong>Pajak Lunas!</strong> Kamu telah membayar seluruh kewajiban pajak. Terima kasih telah taat pajak 🏛️</div>`}
       `:`<div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:14px;font-size:13px;color:#065f46">✅ Tidak ada kewajiban pajak saat ini. Terus tingkatkan omzetmu!</div>`}
     </div>
     <div class="card p-5">
@@ -6173,6 +6232,215 @@ const RANDOM_EVENTS_NEW = [
       }},
     ]
   },
+  // ============================================================
+  // NEW VARIED EVENTS
+  // ============================================================
+  {
+    id:'marketplace_ban', emoji:'🚫', title:'Produkmu Kena Takedown!',
+    desc:'Platform marketplace mendeteksi pelanggaran deskripsi. Salah satu produkmu ditakedown sementara!',
+    gradient:'linear-gradient(135deg,#dc2626,#7f1d1d)',
+    choices:[
+      {label:'⚡ Ajukan banding segera (Rp 200rb admin)', effect:(G)=>{
+        const cost=200000; if(G.cash>=cost){G.cash-=cost;G.totalExpense+=cost;}
+        G.rating=Math.max(1,G.rating-0.1);
+        return {log:'⚡ Banding diajukan. Produk aktif kembali, rating -0.1', type:'warning'};
+      }},
+      {label:'🔄 Edit deskripsi & reupload (gratis)', effect:(G)=>{
+        G.rating=Math.max(1,G.rating-0.2);
+        return {log:'🔄 Produk diedit & diupload ulang. Sementara kehilangan traffic.', type:'info'};
+      }},
+    ]
+  },
+  {
+    id:'flash_order', emoji:'⚡', title:'Order Dadakan dari Perusahaan!',
+    desc:'Sebuah perusahaan ingin order produkmu dalam jumlah besar untuk kebutuhan kantornya!',
+    gradient:'linear-gradient(135deg,#059669,#047857)',
+    choices:[
+      {label:'✅ Terima pesanan (produksi ekstra +Rp 2jt)', effect:(G)=>{
+        const cost=2000000; const bonus=randInt(8000000,15000000);
+        if(G.cash>=cost){G.cash-=cost;G.totalExpense+=cost;G.cash+=bonus;G.totalRevenue+=bonus;}
+        G.trustScore=Math.min(100,(G.trustScore||50)+5);
+        return {log:'💼 Order B2B berhasil! +'+fmtFull(bonus)+' revenue!', type:'success'};
+      }},
+      {label:'❌ Tolak (kapasitas tidak cukup)', effect:(G)=>{
+        return {log:'Order B2B ditolak karena kapasitas. Kesempatan berlalu.', type:'info'};
+      }},
+    ]
+  },
+  {
+    id:'celebrity_spotted', emoji:'🌠', title:'Selebritis Pakai Produkmu!',
+    desc:'Foto selebritis menggunakan produkmu tersebar di media sosial. Demand meledak!',
+    gradient:'linear-gradient(135deg,#7c3aed,#5b21b6)',
+    choices:[
+      {label:'🚀 Manfaatkan momen (pasang iklan sekarang)', effect:(G)=>{
+        const cost=1000000; if(G.cash>=cost){G.cash-=cost;G.totalExpense+=cost;}
+        G.followers+=randInt(2000,5000); const bonus=randInt(5000000,12000000);
+        G.cash+=bonus; G.totalRevenue+=bonus;
+        return {log:'🌠 Viral karena selebritis! +followers & omzet melonjak!', type:'success'};
+      }},
+      {label:'😌 Biarkan natural (hemat biaya)', effect:(G)=>{
+        G.followers+=randInt(500,1500);
+        return {log:'🌠 Dapat +followers organic dari momen selebritis.', type:'success'};
+      }},
+    ]
+  },
+  {
+    id:'stock_damage', emoji:'🔥', title:'Stok Terbakar di Gudang!',
+    desc:'Kebakaran kecil di area penyimpanan merusak beberapa stok. Kerugian tak terduga!',
+    gradient:'linear-gradient(135deg,#ef4444,#b91c1c)',
+    choices:[
+      {label:'🛡️ Klaim asuransi (jika punya)', effect:(G)=>{
+        if(G.insurancePlan){const save=randInt(1500000,3500000);G.cash+=save;return {log:'🛡️ Klaim asuransi berhasil! +'+fmtFull(save), type:'success'};}
+        G.products.forEach(p=>{p.stock=Math.max(0,Math.floor(p.stock*0.7));});
+        const loss=randInt(1000000,3000000);G.cash=Math.max(0,G.cash-loss);
+        return {log:'🔥 Tidak ada asuransi. Stok -30%, rugi '+fmtFull(loss), type:'error'};
+      }},
+      {label:'💪 Restock darurat dari supplier', effect:(G)=>{
+        const cost=randInt(1500000,3000000);
+        G.cash=Math.max(0,G.cash-cost);G.totalExpense+=cost;
+        G.products.forEach(p=>{p.stock+=20;});
+        return {log:'💪 Restock darurat dilakukan. Biaya '+fmtFull(cost)+', semua produk +20 stok', type:'warning'};
+      }},
+    ]
+  },
+  {
+    id:'competitor_collab', emoji:'🤝', title:'Tawaran Kolaborasi Kompetitor!',
+    desc:'Kompetitor terbesar kategorimu mengajak kolaborasi bundle produk bersama untuk memperluas pasar.',
+    gradient:'linear-gradient(135deg,#0ea5e9,#0284c7)',
+    choices:[
+      {label:'✅ Terima kolaborasi', effect:(G)=>{
+        G.followers+=randInt(800,2000); const bonus=randInt(2000000,5000000);
+        G.cash+=bonus;G.totalRevenue+=bonus;
+        return {log:'🤝 Kolaborasi sukses! +'+randInt(800,2000)+' followers & revenue naik!', type:'success'};
+      }},
+      {label:'❌ Tolak, jaga independensi', effect:(G)=>{
+        G.trustScore=Math.min(100,(G.trustScore||50)+2);
+        return {log:'Kolaborasi ditolak. Trust +2 karena dianggap brand mandiri.', type:'info'};
+      }},
+    ]
+  },
+  {
+    id:'logistics_strike', emoji:'✊', title:'Kurir Mogok Kerja!',
+    desc:'Karyawan kurir besar melakukan aksi mogok. Pengiriman tertunda 1-2 minggu!',
+    gradient:'linear-gradient(135deg,#d97706,#b45309)',
+    choices:[
+      {label:'🚗 Pakai kurir alternatif (biaya 2x)', effect:(G)=>{
+        const cost=randInt(500000,1500000);G.cash=Math.max(0,G.cash-cost);G.totalExpense+=cost;
+        G.rating=Math.max(1,G.rating-0.05);
+        return {log:'🚗 Pakai kurir alternatif. Biaya ekstra '+fmtFull(cost)+', pengiriman tetap jalan.', type:'warning'};
+      }},
+      {label:'⏸️ Tunda semua pengiriman', effect:(G)=>{
+        G.rating=Math.max(1,G.rating-0.4);G.trustScore=Math.max(0,(G.trustScore||50)-5);
+        return {log:'⏸️ Pengiriman ditunda. Rating -0.4, trust -5 karena pelanggan kecewa.', type:'error'};
+      }},
+    ]
+  },
+  {
+    id:'tax_audit', emoji:'🔍', title:'Audit Pajak Mendadak!',
+    desc:'Petugas pajak melakukan audit mendadak ke toko online kamu. Pembukuan harus beres!',
+    gradient:'linear-gradient(135deg,#475569,#1e293b)',
+    choices:[
+      {label:'📋 Kooperatif & tunjukkan laporan lengkap', effect:(G)=>{
+        G.trustScore=Math.min(100,(G.trustScore||50)+8);G.taxPaidOnTime=(G.taxPaidOnTime||0)+1;
+        return {log:'📋 Audit berjalan lancar! Trust +8, reputasi kepatuhan meningkat.', type:'success'};
+      }},
+      {label:'🙈 Sembunyikan sebagian data', effect:(G)=>{
+        const fine=randInt(1000000,3000000);
+        if(G.cash>=fine){G.cash-=fine;G.totalExpense+=fine;}else G.cash=0;
+        G.trustScore=Math.max(0,(G.trustScore||50)-12);
+        return {log:'🚨 Audit gagal! Denda '+fmtFull(fine)+', Trust -12!', type:'error'};
+      }},
+    ]
+  },
+  {
+    id:'new_competitor_promo', emoji:'🏪', title:'Kompetitor Baru Masuk Pasar!',
+    desc:'Pemain baru dengan modal besar masuk ke kategorimu dengan harga super murah. Awas!',
+    gradient:'linear-gradient(135deg,#dc2626,#b91c1c)',
+    choices:[
+      {label:'💎 Tonjolkan kualitas & brand (bukan harga)', effect:(G)=>{
+        G.rating=Math.min(5,G.rating+0.1);G.trustScore=Math.min(100,(G.trustScore||50)+3);
+        return {log:'💎 Strategi brand berhasil! Rating +0.1, trust +3.', type:'success'};
+      }},
+      {label:'🔥 Turunkan harga semua produk 15%', effect:(G)=>{
+        G.products.forEach(p=>{p.sellPrice=Math.round(p.sellPrice*0.85);});
+        G.followers+=randInt(200,500);
+        return {log:'🔥 Harga turun 15%! Traffic naik tapi margin berkurang.', type:'warning'};
+      }},
+      {label:'😐 Pertahankan strategi saat ini', effect:(G)=>{
+        G.followers=Math.max(0,G.followers-randInt(50,200));
+        return {log:'Kompetitor merebut sedikit followers & pelangganmu.', type:'warning'};
+      }},
+    ]
+  },
+  {
+    id:'platform_promo_invite', emoji:'🎯', title:'Undangan Flash Sale Platform!',
+    desc:'Shopee / Tokopedia mengundangmu ikut kampanye flash sale eksklusif minggu depan!',
+    gradient:'linear-gradient(135deg,#f59e0b,#d97706)',
+    choices:[
+      {label:'✅ Ikut kampanye (siapkan stok ekstra)', effect:(G)=>{
+        const cost=randInt(1000000,2000000);
+        if(G.cash>=cost){G.cash-=cost;G.totalExpense+=cost;}
+        const bonus=randInt(5000000,15000000);G.cash+=bonus;G.totalRevenue+=bonus;G.followers+=randInt(300,800);
+        return {log:'🎯 Flash sale platform sukses besar! +'+fmtFull(bonus)+' pendapatan!', type:'success'};
+      }},
+      {label:'❌ Lewati kesempatan ini', effect:(G)=>{
+        return {log:'Undangan kampanye dilewatkan. Mungkin lain kali.', type:'info'};
+      }},
+    ]
+  },
+  {
+    id:'supply_shortage', emoji:'📭', title:'Kelangkaan Bahan Baku!',
+    desc:'Bahan baku produk utamamu tiba-tiba langka di pasar. Supplier kehabisan stok!',
+    gradient:'linear-gradient(135deg,#78350f,#451a03)',
+    choices:[
+      {label:'💰 Beli stok cadangan dari importir (harga 2x)', effect:(G)=>{
+        const cost=randInt(3000000,6000000);
+        if(G.cash>=cost){G.cash-=cost;G.totalExpense+=cost;G.products.forEach(p=>{p.stock+=30;});}
+        return {log:'💰 Stok darurat dibeli. Mahal tapi operasional aman!', type:'warning'};
+      }},
+      {label:'🔍 Cari supplier alternatif', effect:(G)=>{
+        G.products.forEach(p=>{p.buyPrice=Math.round(p.buyPrice*1.15);});
+        return {log:'🔍 Supplier baru ditemukan. Harga beli naik 15% tapi stok aman.', type:'info'};
+      }},
+      {label:'⏸️ Tutup penerimaan order sementara', effect:(G)=>{
+        G.rating=Math.max(1,G.rating-0.2);
+        return {log:'⏸️ Order ditutup sementara. Rating -0.2 karena ketidakpastian.', type:'error'};
+      }},
+    ]
+  },
+  {
+    id:'packaging_viral', emoji:'📦', title:'Kemasan Produkmu Viral!',
+    desc:'Foto unboxing kemasan cantikmu viral di Instagram & Twitter. Orang berbondong order!',
+    gradient:'linear-gradient(135deg,#ec4899,#be185d)',
+    choices:[
+      {label:'🎁 Buat limited edition packaging (Rp 500rb)', effect:(G)=>{
+        const cost=500000;if(G.cash>=cost){G.cash-=cost;G.totalExpense+=cost;}
+        G.followers+=randInt(1000,3000);const bonus=randInt(3000000,7000000);
+        G.cash+=bonus;G.totalRevenue+=bonus;
+        return {log:'🎁 Limited packaging terjual habis! +followers & revenue!', type:'success'};
+      }},
+      {label:'😌 Nikmati efek viral organik', effect:(G)=>{
+        G.followers+=randInt(300,1000);
+        return {log:'📦 Followers naik organik dari viral packaging!', type:'success'};
+      }},
+    ]
+  },
+  {
+    id:'customer_loyalty_event', emoji:'👑', title:'Pelanggan VIP Komplain!',
+    desc:'Salah satu pelanggan VIP-mu kecewa karena pesanan terlambat. Ini kesempatan menyelamatkan hubungan!',
+    gradient:'linear-gradient(135deg,#7c3aed,#4c1d95)',
+    choices:[
+      {label:'🎁 Kirim gift eksklusif + minta maaf personal', effect:(G)=>{
+        const cost=300000;if(G.cash>=cost){G.cash-=cost;G.totalExpense+=cost;}
+        G.rating=Math.min(5,G.rating+0.15);G.trustScore=Math.min(100,(G.trustScore||50)+5);
+        return {log:'🎁 VIP kembali happy! Rating +0.15, trust +5.', type:'success'};
+      }},
+      {label:'💬 Balas dengan email formal', effect:(G)=>{
+        G.rating=Math.max(1,G.rating-0.1);
+        return {log:'💬 VIP tetap kecewa. Rating -0.1.', type:'warning'};
+      }},
+    ]
+  },
 ];
 </script>
 
@@ -7473,7 +7741,7 @@ function applyPersonaToGame(id) {
       const grp = grpMap[tab]; if(grp){ const btn=document.getElementById('menuBtn-'+grp); if(btn) btn.classList.add('has-active'); }
       document.querySelectorAll('.nav-dd-item').forEach(b => b.classList.remove('active'));
       const navEl = document.getElementById('nav-'+tab); if(navEl) navEl.classList.add('active');
-      const mc = document.getElementById('mainContent'); if(mc) mc.scrollTop = 0;
+      const mc = document.getElementById('app'); if(mc) mc.scrollTop = 0;
     }
     // Render content for new tabs
     if(tab==='expansion') renderExpansionTab();
@@ -7803,7 +8071,8 @@ function calcWeeksUntilBankrupt() {
 }
 
 function renderCashflowTab() {
-  const el = document.getElementById('cashflowContent'); if (!el) return;
+  // Fix: use cashflowTabContent (tab page) not the modal's cashflowContent
+  const el = document.getElementById('cashflowTabContent') || document.getElementById('cashflowContent'); if (!el) return;
   const burn = calcBurnRate();
   const weeksLeft = calcWeeksUntilBankrupt();
   const recentHistory = (G.weeklyHistory || []).slice(-12);
@@ -8009,6 +8278,37 @@ const ECONOMIC_NEWS_POOL = [
   { id:'n13', type:'positive', emoji:'🌏', title:'Ekspor UMKM ke ASEAN Dibuka!',       desc:'Perjanjian dagang baru membuka peluang ekspor ke negara ASEAN lebih mudah.',           effect:{ exportBoost:0.30 }, duration:8 },
   { id:'n14', type:'negative', emoji:'🦠', title:'Tren Penyakit Musiman!',             desc:'Musim hujan dan tren penyakit pernapasan mengurangi aktivitas belanja offline & online.',effect:{ demandPenalty:0.12, trafficPenalty:0.10 }, duration:3 },
   { id:'n15', type:'positive', emoji:'💳', title:'Buy Now Pay Later Makin Populer!',   desc:'Fitur BNPL mendorong pembelian impulsif. Konversi meningkat terutama segmen muda.',    effect:{ cvBoost:0.18, impulsifBoost:0.25 }, duration:5 },
+  // === BERITA TAMBAHAN (variasi lebih banyak) ===
+  { id:'n16', type:'positive', emoji:'🎁', title:'Harbolnas 12.12 Dimulai!',           desc:'Hari Belanja Online 12.12! Semua marketplace berlomba berikan promo. Ini momentum emas!', effect:{ trafficBoost:1.8, cvBoost:0.22 }, duration:2 },
+  { id:'n17', type:'positive', emoji:'🌙', title:'Ramadan & Lebaran Tiba!',            desc:'Musim belanja Ramadan & Lebaran. Permintaan fashion, makanan & hampers melonjak drastis!', effect:{ demandBoost:0.50, trafficBoost:0.60, cvBoost:0.15 }, duration:5 },
+  { id:'n18', type:'positive', emoji:'🎄', title:'Musim Belanja Akhir Tahun!',         desc:'Natal & Tahun Baru dorong lonjakan belanja. Produk gift & dekorasi paling laris.',      effect:{ demandBoost:0.30, trafficBoost:0.40 }, duration:4 },
+  { id:'n19', type:'negative', emoji:'📮', title:'Kenaikan Tarif Ongkos Kirim!',       desc:'Kurir besar naikkan tarif pengiriman 10-20%. Siapkan strategi harga atau gratis ongkir.', effect:{ shippingCostMult:1.18 }, duration:5 },
+  { id:'n20', type:'negative', emoji:'🪙', title:'Harga BBM Naik!',                   desc:'Kenaikan harga BBM mempengaruhi biaya logistik & distribusi secara keseluruhan.',        effect:{ shippingCostMult:1.12, expenseMult:1.06 }, duration:6 },
+  { id:'n21', type:'positive', emoji:'🏆', title:'Indonesia Naik Kelas UMKM Digital!', desc:'Laporan McKinsey: Indonesia masuk 10 besar ekosistem e-commerce tumbuh tercepat!',      effect:{ trafficBoost:0.20, cvBoost:0.10 }, duration:4 },
+  { id:'n22', type:'neutral',  emoji:'🔄', title:'Perubahan Algoritma Marketplace',    desc:'Tokopedia & Shopee update algoritma pencarian. Toko dengan rating tinggi makin diutamakan.', effect:{ cvBoost:0.05 }, duration:8 },
+  { id:'n23', type:'negative', emoji:'🌧️', title:'Banjir Rob Ganggu Pelabuhan!',       desc:'Banjir rob di Pelabuhan Tanjung Priok memperlambat bongkar muat kontainer impor.',      effect:{ supplierCostMult:1.10, shippingDelay:1 }, duration:3 },
+  { id:'n24', type:'positive', emoji:'🛺', title:'GoTo & Grab Perluas Layanan!',       desc:'GoTo & Grab luncurkan layanan same-day delivery ke 50+ kota. Konversi meningkat.',      effect:{ shippingCostMult:0.88, cvBoost:0.08 }, duration:6 },
+  { id:'n25', type:'negative', emoji:'⚠️', title:'Kasus Penipuan COD Marak!',          desc:'Viral kasus penipuan COD di media sosial. Konsumen lebih hati-hati, order COD turun.',   effect:{ demandPenalty:0.05 }, duration:3 },
+  { id:'n26', type:'positive', emoji:'🤖', title:'AI Chatbot Dongkrak Penjualan!',     desc:'Adopsi AI chatbot untuk CS membuat toko responsif 24 jam. Kepuasan pembeli meningkat.',  effect:{ cvBoost:0.10, demandBoost:0.08 }, duration:5 },
+  { id:'n27', type:'negative', emoji:'💣', title:'Perang Harga Marketplace!',          desc:'Shopee & Tokopedia adu subsidi cashback besar. Konsumen nunggu promo, conversion turun.', effect:{ demandPenalty:0.08 }, duration:4 },
+  { id:'n28', type:'positive', emoji:'📱', title:'TikTok Shop Boom!',                  desc:'Penjualan via TikTok Shop naik 300% YoY. Live shopping jadi tren utama belanja online.', effect:{ trafficBoost:0.35, cvBoost:0.18 }, duration:5 },
+  { id:'n29', type:'negative', emoji:'🏛️', title:'Kebijakan Proteksi Produk Lokal',   desc:'Pemerintah batasi impor barang jadi. Produk lokal diuntungkan, tapi biaya naik.',       effect:{ supplierCostMult:1.08, demandBoost:0.05 }, duration:6 },
+  { id:'n30', type:'positive', emoji:'🎓', title:'Literasi Digital Meningkat Pesat!',  desc:'Pengguna e-commerce baru dari desa & kota kecil makin banyak. Pasar terus membesar.',   effect:{ trafficBoost:0.15, demandBoost:0.12 }, duration:7 },
+  { id:'n31', type:'negative', emoji:'🔒', title:'Kebocoran Data Platform Besar!',     desc:'Marketplace ternama kena serangan siber. Konsumen takut belanja online, traffic turun.', effect:{ trafficPenalty:0.25 }, duration:2 },
+  { id:'n32', type:'positive', emoji:'💚', title:'Tren Produk Ramah Lingkungan!',      desc:'Kesadaran eco-friendly naik. Produk ramah lingkungan & kemasan hijau makin diminati.',   effect:{ demandBoost:0.15, cvBoost:0.08 }, duration:6 },
+  { id:'n33', type:'negative', emoji:'🏗️', title:'Kenaikan UMR Perkotaan!',           desc:'Pemerintah naikkan UMR kota besar. Biaya karyawan & operasional penjual meningkat.',    effect:{ expenseMult:1.08 }, duration:8 },
+  { id:'n34', type:'positive', emoji:'🎪', title:'Festival Belanja Mid-Year!',         desc:'Mid-year sale besar-besaran di semua marketplace! Penawaran terbaik & traffic tinggi.',  effect:{ trafficBoost:0.60, cvBoost:0.15 }, duration:3 },
+  { id:'n35', type:'negative', emoji:'🌡️', title:'El Nino Ganggu Produksi!',          desc:'El Nino sebabkan gagal panen & gangguan produksi. Harga bahan baku melonjak tinggi.',    effect:{ supplierCostMult:1.22, demandPenalty:0.06 }, duration:5 },
+  { id:'n36', type:'positive', emoji:'🏦', title:'OJK Permudah Akses KUR Digital!',   desc:'OJK luncurkan program KUR digital via aplikasi. Pinjaman modal bisa diajukan online.',  effect:{ creditLimitBoost:0.4, creditCostMult:0.92 }, duration:5 },
+  { id:'n37', type:'neutral',  emoji:'📊', title:'Survei: UMKM Digital Makin Merata',  desc:'Kemenkop: jumlah UMKM yang go-digital naik 40%. Persaingan lebih ketat, inovasi kunci!', effect:{ demandBoost:0.03 }, duration:10 },
+  { id:'n38', type:'negative', emoji:'🛑', title:'Razia Produk Tidak Bersertifikasi!', desc:'Kemenperin razia produk tanpa sertifikasi di marketplace. Konsumen jadi lebih selektif.', effect:{ trafficPenalty:0.10, demandPenalty:0.08 }, duration:3 },
+  { id:'n39', type:'positive', emoji:'🌟', title:'Influencer Marketing Boom!',         desc:'Biaya endorsement turun karena banyak micro-influencer. ROI marketing digital naik.',   effect:{ cvBoost:0.12, trafficBoost:0.18 }, duration:4 },
+  { id:'n40', type:'positive', emoji:'🚢', title:'Jalur Logistik Baru Dibuka!',        desc:'Kemenhub buka jalur distribusi baru ke wilayah timur Indonesia. Ongkir ke daerah turun.', effect:{ shippingCostMult:0.85 }, duration:6 },
+  { id:'n41', type:'positive', emoji:'📸', title:'Fitur Live Shopping Makin Canggih!', desc:'Update fitur live shopping di semua marketplace. Interaksi real-time tingkatkan konversi.', effect:{ cvBoost:0.14, trafficBoost:0.12 }, duration:5 },
+  { id:'n42', type:'negative', emoji:'🔥', title:'Musim Kemarau Panjang!',             desc:'Kemarau panjang ganggu produksi pertanian & distribusi barang ke daerah tertentu.',      effect:{ supplierCostMult:1.07, shippingCostMult:1.08 }, duration:4 },
+  { id:'n43', type:'positive', emoji:'🇮🇩', title:'Bangga Buatan Indonesia!',          desc:'Kampanye nasional #BanggaBuatanIndonesia viral. Produk lokal diminati lebih banyak.',    effect:{ demandBoost:0.18, trafficBoost:0.12 }, duration:6 },
+  { id:'n44', type:'negative', emoji:'📦', title:'Stok Nasional Terganggu!',           desc:'Masalah rantai pasokan global membuat beberapa bahan baku langka di pasar domestik.',    effect:{ supplierCostMult:1.15 }, duration:4 },
+  { id:'n45', type:'positive', emoji:'🎮', title:'Tren Produk Gaming Meledak!',        desc:'Pasar gaming Indonesia melonjak. Aksesori gaming & gadget paling banyak dicari online.', effect:{ trafficBoost:0.25, cvBoost:0.10 }, duration:4 },
 ];
 
 if (!G.activeNews)     G.activeNews     = [];
@@ -8025,8 +8325,8 @@ function processEconomicNews(logs) {
     }
     return true;
   });
-  // Spawn new news (20% chance/week)
-  if (Math.random() < 0.20) {
+  // Spawn new news (35% chance/week, guaranteed on week 1)
+  if (G.week === 1 || Math.random() < 0.35) {
     const available = ECONOMIC_NEWS_POOL.filter(n => !(G.activeNews || []).some(a => a.id === n.id));
     if (available.length > 0) {
       const news = available[Math.floor(Math.random() * available.length)];
@@ -8080,7 +8380,7 @@ function renderNewsTab() {
         </div>
       </div>
     </div>`).join('')}
-  </div>` : '<div class="card p-5 mb-4"><div style="text-align:center;color:#94a3b8;padding:24px 0">📰 Tidak ada berita aktif minggu ini.</div></div>'}
+  </div>` : `<div class="card p-5 mb-4"><div style="text-align:center;color:#94a3b8;padding:24px 0"><div style="font-size:40px;margin-bottom:8px">📰</div><div style="font-size:14px;font-weight:700;color:#475569;margin-bottom:4px">Tidak ada berita aktif minggu ini</div><div style="font-size:12px">Berita ekonomi muncul setiap beberapa minggu. Tekan ⏭ Lanjut Minggu untuk memajukan waktu!</div></div></div>`}
 
   <div class="card p-5">
     <div class="section-header">📚 Arsip Berita</div>
