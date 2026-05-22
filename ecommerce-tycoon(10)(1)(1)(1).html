@@ -14,7 +14,7 @@
 ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
 body{background:#f0f2f8}
 /* TOP NAV */
-#topNav{position:fixed;top:0;left:0;right:0;z-index:200;background:#0f172a;box-shadow:0 2px 16px rgba(0,0,0,.25)}
+#topNav{position:fixed;top:0;left:0;right:0;z-index:200;background:#0f172a;box-shadow:0 2px 16px rgba(0,0,0,.25);overflow:visible}
 #topNavBrand{display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.07)}
 #topNavStats{display:flex;align-items:center;gap:0;padding:6px 20px;border-bottom:1px solid rgba(255,255,255,.07);flex-wrap:nowrap;overflow-x:auto}
 #topNavStats::-webkit-scrollbar{display:none}
@@ -23,7 +23,7 @@ body{background:#f0f2f8}
 .nav-stat-label{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
 .nav-stat-val{font-size:13px;font-weight:700}
 /* === MEGA MENU NAV === */
-#topNavTabs{display:flex;align-items:stretch;gap:2px;padding:0 12px;position:static}
+#topNavTabs{display:flex;align-items:stretch;gap:2px;padding:0 12px;position:static;overflow:visible}
 .nav-menu-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;font-weight:700;color:#94a3b8;cursor:pointer;border:none;background:transparent;white-space:nowrap;border-bottom:3px solid transparent;transition:all .18s;position:relative;letter-spacing:.2px;user-select:none}
 .nav-menu-btn:hover,.nav-menu-wrap:hover>.nav-menu-btn{color:#e2e8f0;background:rgba(255,255,255,.05)}
 .nav-menu-btn.has-active{color:#a5b4fc;border-bottom-color:#6366f1}
@@ -32,7 +32,9 @@ body{background:#f0f2f8}
 .nav-menu-wrap:hover>.nav-menu-btn .chevron{transform:rotate(180deg)}
 /* Dropdown */
 .nav-dropdown{
-  position:fixed;
+  position:absolute;
+  top:100%;
+  left:0;
   min-width:200px;
   background:#1e293b;
   border-radius:0 0 12px 12px;
@@ -42,15 +44,15 @@ body{background:#f0f2f8}
   z-index:9999;
   display:none;
   padding:6px 0;
-  top:96px; /* fallback — JS overrides this */
+  /* invisible top bridge — closes the gap between button & dropdown */
+  margin-top:0;
   animation:dropDown .15s ease;
   pointer-events:auto;
 }
-@keyframes dropDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-/* Show dropdown on hover (desktop) */
-.nav-menu-wrap:hover>.nav-dropdown{display:block}
-/* Keep open when toggled via JS click */
+/* invisible padding-top bridge so mouse doesn't leave the hover area */
+.nav-menu-wrap:hover>.nav-dropdown,
 .nav-menu-wrap.dd-open>.nav-dropdown{display:block}
+@keyframes dropDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .nav-menu-wrap{position:relative;cursor:pointer}
 .nav-dd-item{display:flex;align-items:center;gap:9px;padding:9px 18px;font-size:13px;font-weight:600;color:#94a3b8;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;transition:all .15s;white-space:nowrap;border-left:3px solid transparent}
 .nav-dd-item:hover{background:rgba(99,102,241,.18);color:#e2e8f0;border-left-color:#6366f1}
@@ -9397,6 +9399,84 @@ function updateTodoPanel() {
     </div>
   `).join('');
 }
+
+// ============================================================
+// ROBUST DROPDOWN NAV — no-gap hover with JS mouseenter/leave
+// ============================================================
+(function initRobustNav(){
+  // delay (ms) before hiding after mouse leaves — gives time to move to dropdown
+  var HIDE_DELAY = 120;
+  var timers = {};
+
+  function openMenu(wrap){
+    var id = wrap.id;
+    clearTimeout(timers[id]);
+    // close all others first
+    document.querySelectorAll('.nav-menu-wrap.dd-open').forEach(function(w){
+      if(w !== wrap){ w.classList.remove('dd-open'); }
+    });
+    wrap.classList.add('dd-open');
+  }
+
+  function closeMenu(wrap){
+    var id = wrap.id;
+    clearTimeout(timers[id]);
+    timers[id] = setTimeout(function(){
+      wrap.classList.remove('dd-open');
+    }, HIDE_DELAY);
+  }
+
+  function cancelClose(wrap){
+    clearTimeout(timers[wrap.id]);
+  }
+
+  function bindWrap(wrap){
+    var btn = wrap.querySelector('.nav-menu-btn');
+    var dd  = wrap.querySelector('.nav-dropdown');
+    if(!dd) return;
+
+    // Mouse enters the button or wrap
+    wrap.addEventListener('mouseenter', function(){ openMenu(wrap); });
+    // Mouse leaves the wrap (includes button and dropdown together since dropdown is a child)
+    wrap.addEventListener('mouseleave', function(){ closeMenu(wrap); });
+    // Cancel pending close when re-entering dropdown
+    if(dd){
+      dd.addEventListener('mouseenter', function(){ cancelClose(wrap); });
+      dd.addEventListener('mouseleave', function(){ closeMenu(wrap); });
+    }
+    // Click on button also toggles (for touch / keyboard users)
+    if(btn){
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(wrap.classList.contains('dd-open')){
+          wrap.classList.remove('dd-open');
+        } else {
+          openMenu(wrap);
+        }
+      });
+    }
+  }
+
+  function setup(){
+    document.querySelectorAll('.nav-menu-wrap').forEach(function(wrap){
+      bindWrap(wrap);
+    });
+    // Close all when clicking outside
+    document.addEventListener('click', function(e){
+      if(!e.target.closest('.nav-menu-wrap')){
+        document.querySelectorAll('.nav-menu-wrap.dd-open').forEach(function(w){
+          w.classList.remove('dd-open');
+        });
+      }
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();
 </script>
 
 </body>
