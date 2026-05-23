@@ -465,8 +465,8 @@ input:focus,select:focus,textarea:focus{border-color:#6366f1!important;box-shado
   </div>
   <!-- REALISME BISNIS: DANA TERTAHAN + BIAYA KIRIM + RETUR -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px">
-    <div class="card p-4 stat-card" style="border-left:3px solid #f97316"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">⏳ Dana Tertahan</span><span style="font-size:22px">🔒</span></div><div id="statPendingFunds" style="font-size:16px;font-weight:800;color:#ea580c">Rp 0</div><div style="font-size:11px;color:#94a3b8;margin-top:3px">Menunggu cair T+</div></div>
-    <div class="card p-4 stat-card" style="border-left:3px solid #ef4444"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">🚚 Biaya Kirim</span><span style="font-size:22px">📦</span></div><div id="statShippingCost" style="font-size:16px;font-weight:800;color:#ef4444">Rp 0</div><div style="font-size:11px;color:#94a3b8;margin-top:3px">Total ongkir dikeluarkan</div></div>
+    <div class="card p-4 stat-card" style="border-left:3px solid #f97316"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">⏳ Dana Tertahan</span><span style="font-size:22px">🔒</span></div><div id="statPendingFunds" style="font-size:16px;font-weight:800;color:#ea580c">Rp 0</div><div id="statPendingFundsSub" style="font-size:11px;color:#94a3b8;margin-top:3px">Menunggu cair T+2</div></div>
+    <div class="card p-4 stat-card" style="border-left:3px solid #ef4444"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">🚚 Biaya Kirim</span><span style="font-size:22px">📦</span></div><div id="statShippingCost" style="font-size:16px;font-weight:800;color:#ef4444">Rp 0</div><div id="statShippingCostSub" style="font-size:11px;color:#94a3b8;margin-top:3px">Total ongkir dikeluarkan</div></div>
     <div class="card p-4 stat-card" style="border-left:3px solid #8b5cf6"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">↩️ Biaya Retur</span><span style="font-size:22px">📉</span></div><div id="statReturnCost" style="font-size:16px;font-weight:800;color:#8b5cf6">Rp 0</div><div id="statReturnRate" style="font-size:11px;color:#94a3b8;margin-top:3px">Return rate: 8%</div></div>
     <div class="card p-4 stat-card" style="border-left:3px solid #dc2626"><div class="flex justify-between items-start mb-2"><span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">❌ COD Gagal</span><span style="font-size:22px">🚫</span></div><div id="statCODFraud" style="font-size:16px;font-weight:800;color:#dc2626">0 paket</div><div id="statCODFraudCost" style="font-size:11px;color:#94a3b8;margin-top:3px">Kerugian: Rp 0</div></div>
   </div>
@@ -1553,6 +1553,8 @@ let G = {
   // ============================================================
   pendingFunds:[],        // [{amount, releaseWeek, platform}]
   totalPendingFunds:0,
+  totalPendingFundsEver:0, // cumulative total ever held (never decreases)
+  lastHoldWeeks:2,         // last T+N used, for subtitle display
   // ============================================================
   // FEATURE 4: COD FRAUD RATE
   // ============================================================
@@ -3441,7 +3443,7 @@ function processNextWeek(eventResult){
   let wkShippingCost = 0;
   if(wkUnits > 0 && !G.dropshipMode){
     // Base shipping Rp 8.000–25.000 per unit depending on courier
-    const baseShip = Math.round(rand(8000, 25000));
+    const baseShip = Math.max(8000, Math.round(rand(8000, 25000)));
     // COD surcharge +Rp 3.000 per COD unit
     const codSurcharge = wkCOD * 3000;
     // Warehouse discount
@@ -3455,9 +3457,21 @@ function processNextWeek(eventResult){
     if(codSurcharge>0) shipLog += ` +COD surcharge ${fmtFull(codSurcharge)}`;
     if(warehouseDiscount>0) shipLog += ` (diskon gudang -${Math.round(warehouseDiscount*100)}%)`;
     logs.push({t:'info',m:shipLog});
+  } else if(wkUnits > 0 && G.dropshipMode){
+    // Dropship: supplier handles shipping — platform commission ~5% of revenue acts as cost
+    const dropshipCommission = Math.round(wkRevenue * 0.05);
+    if(dropshipCommission > 0){
+      wkShippingCost = dropshipCommission;
+      G.totalShippingCost = (G.totalShippingCost||0) + wkShippingCost;
+      G.totalExpense += wkShippingCost; wkExpense += wkShippingCost;
+      G.cash -= wkShippingCost;
+      logs.push({t:'info',m:`📦 Komisi dropship: -${fmtFull(wkShippingCost)} (5% dari penjualan)`});
+    }
   }
 
   // ---- FEATURE 4: COD FRAUD RATE ----
+  // Snapshot pre-fraud revenue so return cost calculation uses the correct average sell price
+  const wkRevenuePreFraud = wkRevenue;
   let wkCODFraud = 0, wkCODFraudCost = 0;
   if(wkCOD > 0){
     // Base 12% COD fraud rate
@@ -3473,8 +3487,8 @@ function processNextWeek(eventResult){
       // Double shipping cost for returned packages
       const doubleShipCost = wkCODFraud * Math.round(rand(16000, 50000));
       wkCODFraudCost = doubleShipCost;
-      // Also subtract the revenue for those failed orders (avg sell price)
-      const avgSellPrice = wkRevenue / Math.max(1, wkUnits);
+      // Use pre-fraud snapshot for average sell price so deduction is accurate
+      const avgSellPrice = wkRevenuePreFraud / Math.max(1, wkUnits);
       const fraudRevLoss = Math.round(wkCODFraud * avgSellPrice);
       wkRevenue = Math.max(0, wkRevenue - fraudRevLoss);
       G.cash -= wkCODFraudCost;
@@ -3502,7 +3516,8 @@ function processNextWeek(eventResult){
     returnRate = clamp(returnRate, 0.01, 0.20);
     const wkReturnUnits = Math.floor(wkUnits * returnRate);
     if(wkReturnUnits > 0){
-      const avgSellForReturn = wkRevenue / Math.max(1, wkUnits);
+      // Use pre-fraud revenue snapshot for avg sell price — avoids zero when fraud wiped revenue
+      const avgSellForReturn = wkRevenuePreFraud / Math.max(1, wkUnits);
       wkReturnCost = Math.round(wkReturnUnits * avgSellForReturn * 0.3); // 30% of sell price per unit
       wkRevenue = Math.max(0, wkRevenue - wkReturnCost);
       G.totalReturns = (G.totalReturns||0) + wkReturnUnits;
@@ -3539,6 +3554,8 @@ function processNextWeek(eventResult){
   if(holdAmount > 0){
     if(!G.pendingFunds) G.pendingFunds = [];
     G.pendingFunds.push({amount: holdAmount, releaseWeek: G.week + holdWeeks, platform: activePlatforms[0]||'tokopedia', holdWeeks});
+    // Track cumulative total ever held (so dashboard card never drops to 0)
+    G.totalPendingFundsEver = (G.totalPendingFundsEver||0) + holdAmount;
   }
   // Release pending funds that are due this week
   let wkReleasedFunds = 0;
@@ -3551,16 +3568,17 @@ function processNextWeek(eventResult){
       logs.push({t:'success',m:`🔓 Dana cair: +${fmtFull(wkReleasedFunds)} (dari penjualan minggu lalu)`});
     }
   }
-  // Update total pending
+  // Update currently-held pending total
   G.totalPendingFunds = (G.pendingFunds||[]).reduce((s,f)=>s+f.amount,0);
+  // Store last holdWeeks for subtitle display
+  G.lastHoldWeeks = holdWeeks;
 
   // Actual cash from this week = immediate portion + released funds
   // NOTE: holdAmount stays in pendingFunds queue (not added to cash yet)
   G.cash += immediateRevenue + wkReleasedFunds;
   G.totalRevenue += wkRevenue;
-  // Week 1 special: no pending history yet so the first week just works normally (no double add)
-  if(holdAmount > 0 && G.week > 1){
-    logs.push({t:'info',m:`⏳ Dana ditahan: ${fmtFull(holdAmount)} akan cair T+${holdWeeks} (Minggu ${G.week+holdWeeks})`});
+  if(holdAmount > 0){
+    logs.push({t:'info',m:`⏳ Dana ditahan: ${fmtFull(holdAmount)} akan cair T+${holdWeeks} (Minggu ke-${G.week+holdWeeks})`});
   }
 
   // 9. BANK
@@ -4012,12 +4030,28 @@ function updateNewDashboardStats(){
   if(achTotEl) achTotEl.textContent = ACHIEVEMENTS_CONFIG.length;
 
   // ---- NEW FEATURE STATS ON DASHBOARD ----
-  const pendingTotal = (G.pendingFunds||[]).reduce((s,f)=>s+f.amount,0);
+  // Dana Tertahan: show currently-held queue; fall back to cumulative-ever if queue is empty
+  const pendingHeld = (G.pendingFunds||[]).reduce((s,f)=>s+f.amount,0);
   const pendEl = document.getElementById('statPendingFunds');
-  if(pendEl) pendEl.textContent = fmtFull(pendingTotal);
+  if(pendEl) pendEl.textContent = fmtFull(pendingHeld > 0 ? pendingHeld : (G.totalPendingFundsEver||0));
+  // Subtitle: show T+N from last processed week
+  const pendSubEl = document.getElementById('statPendingFundsSub');
+  if(pendSubEl){
+    const hn = G.lastHoldWeeks || 2;
+    if(pendingHeld > 0){
+      const nextRelease = Math.min(...(G.pendingFunds||[{releaseWeek:G.week+hn}]).map(f=>f.releaseWeek));
+      const weeksLeft = Math.max(0, nextRelease - G.week);
+      pendSubEl.textContent = weeksLeft === 0 ? 'Cair minggu ini!' : `Cair T+${hn} (${weeksLeft} mgg lagi)`;
+    } else {
+      pendSubEl.textContent = 'Menunggu cair T+'+hn;
+    }
+  }
 
   const shipEl = document.getElementById('statShippingCost');
   if(shipEl) shipEl.textContent = fmtFull(G.totalShippingCost||0);
+  // Subtitle: normal vs dropship label
+  const shipSubEl = document.getElementById('statShippingCostSub');
+  if(shipSubEl) shipSubEl.textContent = G.dropshipMode ? 'Total komisi dropship' : 'Total ongkir dikeluarkan';
 
   const retCostEl = document.getElementById('statReturnCost');
   if(retCostEl) retCostEl.textContent = fmtFull(G.totalReturnCost||0);
